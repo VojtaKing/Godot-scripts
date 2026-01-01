@@ -2,6 +2,7 @@
 ## FPSCharacter.gd
 **First person controller**
 * Has movement (obviously )
-*  Has Camera control
-
+* Has Camera control
+* Sliding
+* Velocity based FOV
 

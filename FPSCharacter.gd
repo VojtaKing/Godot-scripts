@@ -1,30 +1,35 @@
-# FPSCharacter.gd
 extends CharacterBody3D
 
-@export var speed: float = 5.0
-@export var friction: float = 8.0  
-@export var mouse_sensitivity: float = 0.1
-@export var jump_velocity: float = 4.5
-@export var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+@export var speed := 4.0
+@export var jump_velocity := 1
+@export var gravity := 9.81
+@export var mouse_sens := 0.1
+@export var slide_pitch := -25
+@export var friction_default := 8.0
+@export var friction_slide := 0.1
+@export var fov_min := 90
+@export var fov_max := 120
+var run_speed = 10.0
+var yaw := 0.0
+var pitch := 0.0
+var cam_pitch := 0.0
 
-var yaw: float = 0
-var pitch: float = 0
-
-@onready var camera: Camera3D = $Camera3D
+@onready var cam := $Camera3D
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	cam_pitch = cam.rotation_degrees.x
 
 func _unhandled_input(event):
 	if event is InputEventMouseMotion:
-		yaw -= event.relative.x * mouse_sensitivity
-		pitch -= event.relative.y * mouse_sensitivity
+		yaw -= event.relative.x * mouse_sens
+		pitch -= event.relative.y * mouse_sens
 		pitch = clamp(pitch, -90, 90)
 		rotation_degrees.y = yaw
-		camera.rotation_degrees.x = pitch
 
 func _physics_process(delta):
-	var input_dir = Vector3.ZERO
+	# --- input ---
+	var input_dir := Vector3.ZERO
 
 	if Input.is_action_pressed("move_forward"):
 		input_dir -= transform.basis.z
@@ -34,24 +39,40 @@ func _physics_process(delta):
 		input_dir -= transform.basis.x
 	if Input.is_action_pressed("move_right"):
 		input_dir += transform.basis.x
-
+	if Input.is_action_pressed("run"):
+		speed = lerp(speed,run_speed,delta)
+		
 	input_dir = input_dir.normalized()
 
-	
-	if input_dir != Vector3.ZERO:
-		velocity.x = input_dir.x * speed
-		velocity.z = input_dir.z * speed
-	else:
-		
-		var decel = 1.0 - friction * delta
-		velocity.x *= decel
-		velocity.z *= decel
+	# movement with friction
+	var target_vel := input_dir * speed
+	var friction := friction_default
+	if Input.is_action_pressed("slide"):
+		friction = friction_slide
 
-	
+	velocity.x = lerp(velocity.x, target_vel.x, delta * friction)
+	velocity.z = lerp(velocity.z, target_vel.z, delta * friction)
+
+	# jump
+	if Input.is_action_pressed("jump") and is_on_floor():
+		velocity.y = clamp(velocity.length(),2,5)
+
+	# gravity
 	if not is_on_floor():
 		velocity.y -= gravity * delta
-	else:
-		if Input.is_action_just_pressed("jump"):
-			velocity.y = jump_velocity
 
 	move_and_slide()
+
+	# --- camera + slide ---
+	var slide := Input.is_action_pressed("slide")
+	var target_pitch := pitch
+	if slide:
+		target_pitch += slide_pitch
+
+	cam_pitch = lerp(cam_pitch, target_pitch, 8 * delta)
+	cam.rotation_degrees.x = cam_pitch
+
+	# --- Velocity-based FOV ---
+	var speed_ratio := velocity.length() / speed
+	speed_ratio = clamp(speed_ratio, 0, 1)
+	cam.fov = lerp(fov_min, fov_max, speed_ratio)
