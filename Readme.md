@@ -5,4 +5,5 @@
 * Has Camera control
 * Sliding
 * Velocity based FOV
+* Headbob
 
