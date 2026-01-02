@@ -29,13 +29,14 @@ func _ready():
 
 func _unhandled_input(event):
 	if event is InputEventMouseMotion:
-		yaw -= event.relative.x * mouse_sens
+		yaw -= clamp(event.relative.x * mouse_sens,-90,90)
 		pitch -= event.relative.y * mouse_sens
 		pitch = clamp(pitch, -90, 90)
 		rotation_degrees.y = yaw
 
 func _physics_process(delta):
 	# --- input ---
+	var slide := Input.is_action_pressed("slide")
 	var input_dir := Vector3.ZERO
 
 	if Input.is_action_pressed("move_forward"):
@@ -58,14 +59,14 @@ func _physics_process(delta):
 	if Input.is_action_pressed("slide"):
 		friction = friction_slide
 	
-	if velocity.length() > 1: 
+	if velocity.length() > 1 and !slide: 
 			bob_timer += delta * bob_speed
 			cam.position.y = default_y + sin(bob_timer) * bob_amount
 	else:
 			
 			cam.position.y = lerp(cam.position.y, default_y, delta * 8)
-	velocity.x = lerp(velocity.x, target_vel.x, delta * friction)
-	velocity.z = lerp(velocity.z, target_vel.z, delta * friction)
+	velocity.x = lerp(velocity.x, target_vel.x, delta * friction * knockback.x)
+	velocity.z = lerp(velocity.z, target_vel.z, delta * friction * knockback.z)
 	
 	# jump
 	if Input.is_action_pressed("jump") and is_on_floor():
@@ -79,14 +80,16 @@ func _physics_process(delta):
 	move_and_slide()
 
 	# --- camera + slide ---
-	var slide := Input.is_action_pressed("slide")
 	var target_pitch := pitch
 	if slide:
 		cam.position.y = lerp(cam.position.y, default_y + slide_offset, delta * 8)
 		collision.scale.y = lerp(cam.position.y, default_y + slide_offset, delta * 8)
+		velocity -= (basis.z * 0.08)
 	else:
 		cam.position.y = lerp(cam.position.y, default_y, delta * 8)
 		collision.scale.y = lerp(cam.position.y, default_y, delta * 8)
+		target_pitch += slide_pitch
+
 
 
 		target_pitch += slide_pitch
