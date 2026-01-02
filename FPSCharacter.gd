@@ -17,6 +17,7 @@ var slide_offset := -0.6
 var bob_amount := 0.05
 var bob_speed := 8.0
 var bob_timer := 0.0
+var default_speed = 4.0
 @onready var cam := $Camera3D
 @onready var collision = $CollisionShape3D
 var default_y = 0.5
@@ -47,7 +48,8 @@ func _physics_process(delta):
 		input_dir += transform.basis.x
 	if Input.is_action_pressed("run"):
 		speed = lerp(speed,run_speed,delta)
-		
+	else:
+		speed = lerp(speed,default_speed,delta)
 	input_dir = input_dir.normalized()
 
 	# movement with friction and headbob
