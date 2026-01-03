@@ -1,7 +1,7 @@
 extends CharacterBody3D
 
 @export var speed := 4.0
-@export var jump_velocity := 4.5
+@export var jump_velocity := 6
 @export var gravity := 9.81
 @export var mouse_sens := 0.1
 @export var slide_pitch := -25
@@ -65,8 +65,8 @@ func _physics_process(delta):
 	else:
 			
 			cam.position.y = lerp(cam.position.y, default_y, delta * 8)
-	velocity.x = lerp(velocity.x, target_vel.x, delta * friction * knockback.x)
-	velocity.z = lerp(velocity.z, target_vel.z, delta * friction * knockback.z)
+	velocity.x = lerp(velocity.x, target_vel.x, delta * friction)
+	velocity.z = lerp(velocity.z, target_vel.z, delta * friction)
 	
 	# jump
 	if Input.is_action_pressed("jump") and is_on_floor():
